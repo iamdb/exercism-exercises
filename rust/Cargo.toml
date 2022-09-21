@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+  "assembly-line",
+  "lucians-luscious-lasagna",
+  "semi-structured-logs",
+  "sublist"
+]
