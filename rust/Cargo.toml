@@ -4,5 +4,6 @@ members = [
   "assembly-line",
   "lucians-luscious-lasagna",
   "semi-structured-logs",
-  "sublist"
+  "sublist",
+  "poker"
 ]
