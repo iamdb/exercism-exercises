@@ -5,5 +5,8 @@ members = [
   "lucians-luscious-lasagna",
   "semi-structured-logs",
   "sublist",
-  "poker"
+  "poker",
+  "allergies",
+  "resistor-color",
+  "health-statistics"
 ]
