@@ -42,4 +42,4 @@ overview of poker hands.
 
 ### Based on
 
-Inspired by the training course from Udacity. - https://www.udacity.com/course/design-of-computer-programs--cs212
+Inspired by the training course from Udacity. - https://www.udacity.com/course/viewer#!/c-cs212/

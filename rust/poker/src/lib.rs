@@ -77,7 +77,6 @@ impl<'a> Hand<'a> {
             .map(Card::from_str)
             .collect::<Vec<Card>>();
         cards.sort();
-        cards.reverse();
 
         Hand {
             hand,
@@ -226,54 +225,51 @@ impl<'a> Hand<'a> {
     }
 
     fn straight(&mut self) -> Option<Kind> {
-        let mut straight = HashSet::new();
-
-        let mut ranks = self.ranks();
-        ranks.reverse();
-
-        let mut ace_low = false;
-
-        if ranks.last() == Some(&Rank::A) {
-            ace_low = true;
-        }
-
-        for window in ranks.windows(2) {
-            let left = &window[0];
-            let right = &window[1];
-
-            if left.next_rank() == *right {
-                straight.insert(left);
-                straight.insert(right);
-            }
-        }
-
-        if straight.len() == self.cards.len() {
-            ranks.sort();
+        if !self.consecutive_ranks() {
+            None
+        } else {
+            let mut ranks = self.ranks();
             ranks.reverse();
 
-            if let Some(ranks) = ranks.get(0..3) {
-                let mut top_three: Vec<Rank> = vec![];
-                for rank in ranks {
-                    top_three.push(rank.clone());
-                }
-
-                if top_three.len() == 3 {
-                    Some(Kind::Straight(
-                        top_three.get(0).unwrap().clone(),
-                        top_three.get(1).unwrap().clone(),
-                        top_three.get(2).unwrap().clone(),
-                    ))
-                } else {
-                    None
-                }
+            if self.ace_low() {
+                Some(Kind::Straight(Rank::N5, Rank::N4, Rank::N3))
             } else {
-                None
+                ranks.get(0..3).map(|ranks| {
+                    Kind::Straight(ranks[0].clone(), ranks[1].clone(), ranks[2].clone())
+                })
             }
-        } else if straight.len() == self.cards.len() - 1 && ace_low {
-            Some(Kind::Straight(Rank::N5, Rank::N4, Rank::N3))
-        } else {
-            None
         }
+    }
+
+    fn ace_low(&self) -> bool {
+        let mut ranks = self.ranks();
+        ranks.sort();
+
+        self.consecutive_ranks()
+            && ranks.first() == Some(&Rank::N2)
+            && ranks.last() == Some(&Rank::A)
+    }
+
+    fn consecutive_ranks(&self) -> bool {
+        let mut ranks = self.ranks();
+        ranks.sort();
+
+        for window in ranks.windows(2) {
+            let rank1 = &window[0];
+            let rank1_val = rank1.clone() as i32;
+            let rank2 = &window[1];
+            let mut rank2_val = rank2.clone() as i32;
+
+            // Low Ace Straight
+            if rank2 == &Rank::A && rank1 == &Rank::N5 {
+                rank2_val = 6;
+            }
+
+            if rank2_val != rank1_val + 1 {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -392,28 +388,6 @@ enum Rank {
     Unknown = 0,
 }
 
-impl Rank {
-    fn next_rank(&self) -> Rank {
-        match self {
-            Self::N1 => Self::N2,
-            Self::N2 => Self::N3,
-            Self::N3 => Self::N4,
-            Self::N4 => Self::N5,
-            Self::N5 => Self::N6,
-            Self::N6 => Self::N7,
-            Self::N7 => Self::N8,
-            Self::N8 => Self::N9,
-            Self::N9 => Self::N10,
-            Self::N10 => Self::J,
-            Self::J => Self::Q,
-            Self::Q => Self::K,
-            Self::K => Self::A,
-            Self::A => Self::Unknown,
-            Self::Unknown => Self::Unknown,
-        }
-    }
-}
-
 impl From<&str> for Rank {
     fn from(s: &str) -> Self {
         match s {
@@ -438,9 +412,9 @@ impl From<&str> for Rank {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Suit {
-    Club = 1,
-    Diamond = 2,
-    Heart = 3,
+    Club = 3,
+    Diamond = 1,
+    Heart = 2,
     Spade = 4,
     Unknown = 0,
 }
