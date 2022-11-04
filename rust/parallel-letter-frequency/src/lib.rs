@@ -1,18 +1,18 @@
 #![feature(scoped_threads)]
 // Benchmark results:
-// test bench_large_parallel   ... bench:     193,175 ns/iter (+/- 14,571)
-// test bench_large_sequential ... bench:     351,673 ns/iter (+/- 4,694)
-// test bench_small_parallel   ... bench:       8,268 ns/iter (+/- 384)
-// test bench_small_sequential ... bench:      12,191 ns/iter (+/- 475)
-// test bench_tiny_parallel    ... bench:          34 ns/iter (+/- 0)
-// test bench_tiny_sequential  ... bench:          40 ns/iter (+/- 1)
+// test bench_large_parallel   ... bench:     144,595 ns/iter (+/- 24,168)
+// test bench_large_sequential ... bench:     357,033 ns/iter (+/- 2,854)
+// test bench_small_parallel   ... bench:       7,601 ns/iter (+/- 217)
+// test bench_small_sequential ... bench:      12,306 ns/iter (+/- 545)
+// test bench_tiny_parallel    ... bench:          35 ns/iter (+/- 1)
+// test bench_tiny_sequential  ... bench:          41 ns/iter (+/- 0)
 
-use std::collections::HashMap;
+use std::{collections::HashMap, thread};
 
-pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
+pub fn frequency(input: &[&'static str], worker_count: usize) -> HashMap<char, usize> {
     if input.is_empty() {
         HashMap::new()
-    } else if input.len() == 1 {
+    } else if input.len() < 100 {
         count_freq(input)
     } else {
         let mut freq: HashMap<char, usize> = HashMap::new();
@@ -22,13 +22,20 @@ pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
         if chunk_size != 0 {
             let chunks = input.chunks(chunk_size);
 
-            for chunk in chunks {
-                let f = count_freq(chunk);
+            thread::scope(|s| {
+                let mut threads = Vec::with_capacity(worker_count);
 
-                for (c, s) in f {
-                    (*freq.entry(c).or_insert(0)) += s;
+                for chunk in chunks {
+                    threads.push(s.spawn(|| count_freq(chunk)));
                 }
-            }
+
+                for t in threads {
+                    let f = t.join().unwrap();
+                    for (c, s) in f {
+                        (*freq.entry(c).or_insert(0)) += s;
+                    }
+                }
+            });
         }
 
         freq
